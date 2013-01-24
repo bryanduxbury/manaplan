@@ -53,6 +53,8 @@ class Deck
   end
   
   def util(num_shuffles)
+    shuffle_util = []
+    
     num_shuffles.times do |shuffle_num|
       # shuffled_cards = @cards.shuffle
       srand(10)
@@ -67,25 +69,50 @@ class Deck
       cards_played = []
       
       lands_played = []
-      
+
+      turn = 0
+      this_util = []
+
       until shuffled_cards.empty?
         # draw a card
         hand << shuffled_cards.shift
         
-        sorted_hand = hand.sort_by{|card| card.converted_cost}
+        sorted_hand = hand.dup.sort_by{|card| card.converted_cost}
+        puts ">>>>>>>>>>>>>>> turn #{turn} <<<<<<<<<<<<<<<<"
+        turn+=1
         puts "Current hand: #{sorted_hand.map(&:name).join(",")}"
+        puts "Current land in play: #{lands_played.map(&:name).join(",")}"
 
         results = []
-        debugger
-        determine_hand_play(sorted_hand, [], lands_played, results)
+
+        determine_hand_play(sorted_hand.dup, [], lands_played, results)
 
         puts "Found #{results.size} possible plays."
-        sorted_hands = results.sort_by{|hand| hand.inject(0){|acc, card| acc + card.converted_cost}}
+        sorted_hands = results.sort_by{|h| [h.inject(0){|acc, card| acc + card.converted_cost}, h.size]}
         for h in sorted_hands
           puts h.map(&:name).join(",")
-          puts "Mana spent: #{hand.inject(0){|acc, card| acc += card.converted_cost}}"
+          puts "Mana spent: #{h.inject(0){|acc, card| acc + card.converted_cost}}"
         end
-        raise
+        
+        selected_hand = sorted_hands.last
+        puts "Playing #{selected_hand.map(&:name).join(",")}"
+        
+        mana_used_this_turn = 0
+        for card in selected_hand
+          # puts card.inspect
+          # puts hand.inspect
+          # remove card from hand
+          hand.delete_at(hand.index(card))
+          # put it into the proper collection
+          if card.basic_land?
+            lands_played << card
+          else
+            cards_played << card
+          end
+        end
+        
+        # pause for user input
+        gets
       end
     end
   end
@@ -133,23 +160,24 @@ class Deck
           uncolored_lands << l
         end
       end
+      uncolored_lands += colored_lands
 
       unless colored.empty?
-        return [false, lands]
+        return [false, lands.dup]
       end
 
       until colorless == 0 || uncolored_lands.empty?
-        colored_lands.shift
+        uncolored_lands.shift
         colorless -= 1
       end
       
       unless colorless == 0
-        return [false, lands]
+        return [false, lands.dup]
       end
       
       return [true, uncolored_lands]
     else
-      [false, lands]
+      [false, lands.dup]
     end
   end
 end
