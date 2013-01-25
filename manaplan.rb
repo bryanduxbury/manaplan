@@ -52,71 +52,113 @@ class Deck
     @cards = cards
   end
   
-  def util(num_shuffles)
-    shuffle_util = []
-    
+  def util(num_shuffles, turn_limit)
+    shuffle_results = []
+
     num_shuffles.times do |shuffle_num|
       # shuffled_cards = @cards.shuffle
-      srand(10)
+      # srand(10)
       shuffled_cards = @cards.dup.sort_by{rand}
-      
-      # get the initial hand
-      hand = []
-      7.times do
-        hand << shuffled_cards.shift
-      end
-      
-      cards_played = []
-      
-      lands_played = []
+      shuffle_results << play(shuffled_cards, turn_limit)
+    end
+    
+    spends = shuffle_results.map{|result| cumulative_mana_spent(result)}.sort
+    min = spends.first
+    max = spends.last
+    median = spends[spends.size / 2]
+    avg = spends.inject(0) {|acc, s| acc + s}.to_f / spends.size
+    [min, max, median, avg]
+    # shuffles_with_sizes_by_turn = shuffle_results.map{|result| result.map {|turn| turn.size}}
+    # puts shuffles_with_sizes_by_turn.inspect
+    # grouped = shuffles_with_sizes_by_turn.group_by{|t| t}
+    # puts grouped.inspect
+    # puts grouped.map{|cohort, collection| [cohort, collection.size]}.map{|x| x[1]}.uniq.inspect
+    # # puts .group_by().map{|group| [group.size, group.inspect]}.sort_by{|pair| pair[1]}.join("\n")
+  end
 
-      turn = 0
-      this_util = []
-
-      until shuffled_cards.empty?
-        # draw a card
-        hand << shuffled_cards.shift
-        
-        sorted_hand = hand.dup.sort_by{|card| card.converted_cost}
-        puts ">>>>>>>>>>>>>>> turn #{turn} <<<<<<<<<<<<<<<<"
-        turn+=1
-        puts "Current hand: #{sorted_hand.map(&:name).join(",")}"
-        puts "Current land in play: #{lands_played.map(&:name).join(",")}"
-
-        results = []
-
-        determine_hand_play(sorted_hand.dup, [], lands_played, results)
-
-        puts "Found #{results.size} possible plays."
-        sorted_hands = results.sort_by{|h| [h.inject(0){|acc, card| acc + card.converted_cost}, h.size]}
-        for h in sorted_hands
-          puts h.map(&:name).join(",")
-          puts "Mana spent: #{h.inject(0){|acc, card| acc + card.converted_cost}}"
-        end
-        
-        selected_hand = sorted_hands.last
-        puts "Playing #{selected_hand.map(&:name).join(",")}"
-        
-        mana_used_this_turn = 0
-        for card in selected_hand
-          # puts card.inspect
-          # puts hand.inspect
-          # remove card from hand
-          hand.delete_at(hand.index(card))
-          # put it into the proper collection
-          if card.basic_land?
-            lands_played << card
-          else
-            cards_played << card
-          end
-        end
-        
-        # pause for user input
-        gets
+  def cumulative_mana_spent(cards_by_turn)
+    total = 0
+    for turn in cards_by_turn
+      for card in turn
+        total += card.converted_cost
       end
     end
+    total
   end
-  
+
+  def play(deck, turn_limit)
+    # get the initial hand
+    hand = []
+    7.times do
+      hand << deck.shift
+    end
+
+    cards_played = []
+
+    lands_played = []
+
+    turn = 0
+    cards_played_per_turn = []
+
+    until deck.empty? || turn == turn_limit
+      cards_played_this_turn = []
+
+      # draw a card
+      hand << deck.shift
+      
+      sorted_hand = hand.dup.sort_by{|card| card.converted_cost}
+      # puts ">>>>>>>>>>>>>>> turn #{turn} <<<<<<<<<<<<<<<<"
+      turn+=1
+      # puts "Current hand: #{sorted_hand.map(&:name).join(",")}"
+      # puts "Current land in play: #{lands_played.map(&:name).join(",")}"
+
+      results = []
+
+      determine_hand_play(sorted_hand.dup, [], lands_played, results)
+
+      # puts "Found #{results.size} possible plays."
+      sorted_hands = results.sort_by{|h| [h.inject(0){|acc, card| acc + card.converted_cost}, h.size]}
+      # for h in sorted_hands
+      #   puts h.map(&:name).join(",")
+      #   puts "Mana spent: #{h.inject(0){|acc, card| acc + card.converted_cost}}"
+      # end
+
+      selected_hand = sorted_hands.last
+      # puts "Playing #{selected_hand.map(&:name).join(",")}"
+
+      mana_used_this_turn = 0
+      for card in selected_hand
+        # always put it in this turn's played cards
+        cards_played_this_turn << card
+
+        # remove card from hand
+        hand.delete_at(hand.index(card))
+
+        # put it into the proper collection
+        if card.basic_land?
+          lands_played << card
+        else
+          cards_played << card
+        end
+      end
+
+      if hand.size > 7
+        # puts "Hand size is #{hand.size}, so we have to discard."
+        while hand.size > 7
+          discarded = hand.pop
+          # puts "Discarding highest-cost card #{discarded.name}"
+        end
+      end
+
+      cards_played_per_turn << cards_played_this_turn
+
+      # pause for user input
+      # gets
+    end
+
+    cards_played_per_turn
+  end
+
   def determine_hand_play(in_hand = [], so_far = [], untapped_lands = [], results = [])
     if in_hand.empty?
       results << so_far
@@ -226,4 +268,4 @@ lands = [BasicLand.new("B"), BasicLand.new("U")] * 7
 
 deck = Deck.new(pool + lands)
 
-deck.util(20)
+puts deck.util(1000, 20).inspect
