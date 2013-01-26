@@ -48,6 +48,22 @@ class BasicLand < Card
 end
 
 class Deck
+  attr_accessor :cards
+
+  def self.from_phenotype(mask, pool)
+    # puts ">>>>>>>>>>>>> #{pool.size}"
+    cards = []
+    0.upto(mask.size) do |idx|
+      if mask[idx]
+        if pool[idx].nil?
+          debugger
+        end
+        cards << pool[idx]
+      end
+    end
+    Deck.new(cards)
+  end
+  
   def initialize(cards)
     @cards = cards
   end
@@ -68,12 +84,6 @@ class Deck
     median = spends[spends.size / 2]
     avg = spends.inject(0) {|acc, s| acc + s}.to_f / spends.size
     [min, max, median, avg]
-    # shuffles_with_sizes_by_turn = shuffle_results.map{|result| result.map {|turn| turn.size}}
-    # puts shuffles_with_sizes_by_turn.inspect
-    # grouped = shuffles_with_sizes_by_turn.group_by{|t| t}
-    # puts grouped.inspect
-    # puts grouped.map{|cohort, collection| [cohort, collection.size]}.map{|x| x[1]}.uniq.inspect
-    # # puts .group_by().map{|group| [group.size, group.inspect]}.sort_by{|pair| pair[1]}.join("\n")
   end
 
   def cumulative_mana_spent(cards_by_turn)
@@ -105,7 +115,7 @@ class Deck
 
       # draw a card
       hand << deck.shift
-      
+
       sorted_hand = hand.dup.sort_by{|card| card.converted_cost}
       # puts ">>>>>>>>>>>>>>> turn #{turn} <<<<<<<<<<<<<<<<"
       turn+=1
@@ -164,7 +174,7 @@ class Deck
       results << so_far
       return
     end
-    
+
     0.upto(in_hand.size - 1) do |idx|
       card = in_hand[idx]
 
@@ -264,8 +274,106 @@ pool = [
   Card.new("Zephyr Sprite", "U")
 ]
 
-lands = [BasicLand.new("B"), BasicLand.new("U")] * 7
+lands = [BasicLand.new("B"), BasicLand.new("U")] * 10
 
-deck = Deck.new(pool + lands)
+complete_pool = pool + lands
 
-puts deck.util(1000, 20).inspect
+population = []
+120.times do |dnum|
+  phenotype_mask = [true] * complete_pool.size
+  # puts "seeding deck num #{dnum}"
+  until phenotype_mask.select{|x| x == true}.size == 40
+    # puts phenotype_mask.inspect
+    # gets
+    phenotype_mask[rand(phenotype_mask.size)] = false
+  end
+  population << phenotype_mask
+end
+
+20.times do |generation_number|
+  puts "starting generation number #{generation_number}"
+
+  to_eval = []
+  for phenotype in population
+    deck = Deck.from_phenotype(phenotype, complete_pool)
+    util = deck.util(200, 20)
+    to_eval << [phenotype, util]
+    print "##"
+  end
+
+  puts
+
+  puts "Current population performance:"
+  puts to_eval.group_by{|p| p[1][3].to_i}.map{|avg_spend, phenotypes| [avg_spend, phenotypes.size]}.sort_by{|x| x[0]}.map{|x| "#{x[0]} => #{x[1]}"}.join("\n")
+
+  new_population = []
+
+  # sort by avg spend
+  sorted_by_util = to_eval.sort_by{|pair| pair[1][3]}.map{|x| x[0]}
+  top_half = sorted_by_util[sorted_by_util.size/2 .. -1]
+  
+  until top_half.empty?
+    mom = top_half.delete_at(rand(top_half.size))
+    dad = top_half.delete_at(rand(top_half.size))
+
+    child = []
+    0.upto(mom.size-1) do |gene_idx|
+      if rand(2) == 1
+        child << mom[gene_idx]
+      else
+        child << dad[gene_idx]
+      end
+    end
+    new_population << mom << dad << child
+  end
+
+  bottom_quarter = sorted_by_util[0 ... sorted_by_util.size / 4]
+
+  for loser in bottom_quarter
+    mutant = []
+
+    0.upto(loser.size-1) do |gene_idx|
+      if rand(100) == 0
+        mutant << !loser[gene_idx]
+      else
+        mutant << loser[gene_idx]
+      end
+    end
+
+    new_population << mutant
+  end
+
+  population = new_population
+end
+
+puts "Done learning."
+
+puts "Evaluating final population."
+to_eval = []
+for phenotype in population
+  deck = Deck.from_phenotype(phenotype, complete_pool)
+  util = deck.util(200, 20)
+  to_eval << [phenotype, util]
+  print '#'
+end
+
+puts
+
+puts "Final population performance:"
+grouped_by_avg_spend = to_eval.group_by{|p| p[1][3].to_i}
+puts grouped_by_avg_spend.map{|avg_spend, phenotypes| [avg_spend, phenotypes.size]}.sort_by{|x| x[0]}.map{|x| "#{x[0]} => #{x[1]}"}.join("\n")
+
+puts "Peak group achieves 20-turn mana spend of #{grouped_by_avg_spend.keys.max}."
+puts "Decks: "
+debugger
+for phenotype in grouped_by_avg_spend[grouped_by_avg_spend.keys.max]
+  cards_and_counts = Deck.from_phenotype(phenotype[0], complete_pool).cards.group_by(&:name)
+  for cardname in cards_and_counts.keys.sort
+    puts "  #{cards_and_counts[cardname].size}x #{cardname}"
+  end
+  puts
+end
+
+# deck = Deck.new(pool + lands)
+
+# puts deck.util(1000, 20).inspect
