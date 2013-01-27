@@ -71,7 +71,7 @@ class Deck
 
       results = []
 
-      determine_hand_play(sorted_hand.dup, [], lands_played, results)
+      Deck.determine_hand_play(sorted_hand.dup, [], lands_played, results)
 
       sorted_hands = results.sort_by{|h| [h.inject(0){|acc, card| acc + card.converted_cost}, h.size]}
 

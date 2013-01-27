@@ -7,8 +7,6 @@ class Card
     @abilities_costs = abilities_costs
   end
 
-
-
   def basic_land?
     false
   end
@@ -34,7 +32,6 @@ class Card
     @colorless
   end
 
-  
   def ==(other)
     @name == other.name
   end

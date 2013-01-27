@@ -1,3 +1,5 @@
 source "http://rubygems.org"
 gem "rspec", :require => "spec"
 gem "ruby-prof"
+gem "ruby-debug"
+gem "trollop"
