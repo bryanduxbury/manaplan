@@ -92,7 +92,7 @@ end
   bottom_quarter = sorted_by_util[0 ... sorted_by_util.size / 4]
 
   for loser in bottom_quarter
-    new_population << Phenotype.mutate(loser, 10)
+    new_population << Phenotype.mutate(loser, 100)
   end
 
   population = new_population

@@ -1,22 +1,31 @@
 class Card
   attr_reader :name, :castingcost, :abilities_costs
-  
+
   def basic_land?
     false
   end
 
   def converted_cost
-    castingcost.sub(/\d*/, "").size + castingcost.sub(/[a-z]*/, "").to_i
+    if @converted_cost.nil?
+      @converted_cost = colored.size + colorless
+    end
+    @converted_cost
   end
 
   def colored
-    castingcost.sub(/\d*/, "").split("")
+    if @colored.nil?
+      @colored = castingcost.sub(/\d*/, "").split("")
+    end
+    @colored
   end
 
   def colorless
-    castingcost.sub(/[a-z]*/, "").to_i
+    if @colorless.nil?
+      @colorless = castingcost.sub(/[a-z]*/, "").to_i
+    end
+    @colorless
   end
-  
+
   def initialize(name, castingcost, abilities_costs = nil)
     @name = name
     @castingcost = castingcost

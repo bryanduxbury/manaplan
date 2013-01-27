@@ -25,8 +25,22 @@ class Phenotype
   end
 
   def self.mutate(old_phenotype, chance_of_mutation)
-    new_mask = old_phenotype.card_mask.dup.map do |gene|
-      rand(100) < chance_of_mutation ? !gene : gene
+    expressed_idx = []
+    unexpressed_idx = []
+
+    old_phenotype.card_mask.size.times do |idx|
+      if old_phenotype.card_mask[idx]
+        expressed_idx << idx
+      else
+        unexpressed_idx << idx
+      end
+    end
+
+    new_mask = old_phenotype.card_mask.dup
+
+    if rand(100) < chance_of_mutation
+      new_mask[expressed_idx[rand(expressed_idx.size)]] = false
+      new_mask[unexpressed_idx[rand(unexpressed_idx.size)]] = true
     end
 
     Phenotype.new(new_mask, old_phenotype.card_pool)

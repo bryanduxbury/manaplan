@@ -2,7 +2,6 @@ class Deck
   attr_accessor :cards
 
   def self.from_phenotype(mask, pool)
-    # puts ">>>>>>>>>>>>> #{pool.size}"
     cards = []
     0.upto(mask.size) do |idx|
       if mask[idx]
@@ -14,11 +13,11 @@ class Deck
     end
     Deck.new(cards)
   end
-  
+
   def initialize(cards)
     @cards = cards
   end
-  
+
   def util(num_shuffles, turn_limit)
     shuffle_results = []
 
@@ -28,7 +27,7 @@ class Deck
       shuffled_cards = @cards.dup.sort_by{rand}
       shuffle_results << play(shuffled_cards, turn_limit)
     end
-    
+
     spends = shuffle_results.map{|result| cumulative_mana_spent(result)}.sort
     min = spends.first
     max = spends.last
@@ -104,54 +103,47 @@ class Deck
       end
 
       if hand.size > 7
-        # puts "Hand size is #{hand.size}, so we have to discard."
         while hand.size > 7
           discarded = hand.pop
-          # puts "Discarding highest-cost card #{discarded.name}"
         end
       end
 
       cards_played_per_turn << cards_played_this_turn
-
-      # pause for user input
-      # gets
     end
 
     cards_played_per_turn
   end
 
   def determine_hand_play(in_hand = [], so_far = [], untapped_lands = [], results = [])
-    if in_hand.empty?
-      results << so_far
-      return
-    end
-
     0.upto(in_hand.size - 1) do |idx|
       card = in_hand[idx]
 
       # treat lands and cards differently
       if card.basic_land?
         if so_far.select{|c| c.basic_land?}.empty?
-          new_hand = in_hand.dup
-          new_hand.delete_at(idx)
-          determine_hand_play(new_hand, so_far.dup << card, untapped_lands.dup << card, results)
+          # new_hand = in_hand.dup
+          # new_hand.delete_at(idx)
+          # if we're playing a land, then omit any other basic lands from further investigation
+          new_hand = in_hand[idx+1 ... in_hand.size].reject(&:basic_land?)
+          determine_hand_play(new_hand, so_far + [card], untapped_lands + [card], results)
         end
       else
         castable, remaining_land = cast(card, untapped_lands)
         if castable
-          new_hand = in_hand.dup
-          new_hand.delete_at(idx)
-          determine_hand_play(new_hand, so_far.dup << card, remaining_land, results)
+          # new_hand = in_hand.dup
+          # new_hand.delete_at(idx)
+          new_hand = in_hand[idx+1 ... in_hand.size]
+          determine_hand_play(new_hand, so_far + [card], remaining_land, results)
         end
       end
     end
     results << so_far
   end
-  
+
   def cast(card, lands)
     if card.converted_cost <= lands.size
       colorless = card.colorless
-      colored = card.colored
+      colored = card.colored.dup
 
       colored_lands = lands.dup
       uncolored_lands = []
@@ -166,24 +158,20 @@ class Deck
       uncolored_lands += colored_lands
 
       unless colored.empty?
-        return [false, lands.dup]
+        return [false, lands]
       end
 
-      until colorless == 0 || uncolored_lands.empty?
-        uncolored_lands.shift
-        colorless -= 1
+      # if we've got enough colorless, then chop off the necessary lands and return true
+      if uncolored_lands.size >= colorless
+        return [true, uncolored_lands[colorless .. -1]]
       end
-      
-      unless colorless == 0
-        return [false, lands.dup]
-      end
-      
-      return [true, uncolored_lands]
+
+      [false, lands]
     else
-      [false, lands.dup]
+      [false, lands]
     end
   end
-  
+
   def to_s
     s = ""
     cards_by_name = cards.group_by(&:name)
