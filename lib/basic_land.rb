@@ -1,18 +1,15 @@
 class BasicLand < Card
   attr_reader :color
 
-  def name
-    "land(#{@color})"
+  def initialize(color)
+    super("land(#{color})", "0")
+    @color = color
   end
 
   def basic_land?
     true
   end
 
-  def initialize(color)
-    @color = color
-  end
-  
   def converted_cost
     0
   end

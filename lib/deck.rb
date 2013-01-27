@@ -67,24 +67,15 @@ class Deck
       hand << deck.shift
 
       sorted_hand = hand.dup.sort_by{|card| card.converted_cost}
-      # puts ">>>>>>>>>>>>>>> turn #{turn} <<<<<<<<<<<<<<<<"
       turn+=1
-      # puts "Current hand: #{sorted_hand.map(&:name).join(",")}"
-      # puts "Current land in play: #{lands_played.map(&:name).join(",")}"
 
       results = []
 
       determine_hand_play(sorted_hand.dup, [], lands_played, results)
 
-      # puts "Found #{results.size} possible plays."
       sorted_hands = results.sort_by{|h| [h.inject(0){|acc, card| acc + card.converted_cost}, h.size]}
-      # for h in sorted_hands
-      #   puts h.map(&:name).join(",")
-      #   puts "Mana spent: #{h.inject(0){|acc, card| acc + card.converted_cost}}"
-      # end
 
       selected_hand = sorted_hands.last
-      # puts "Playing #{selected_hand.map(&:name).join(",")}"
 
       mana_used_this_turn = 0
       for card in selected_hand
@@ -114,7 +105,7 @@ class Deck
     cards_played_per_turn
   end
 
-  def determine_hand_play(in_hand = [], so_far = [], untapped_lands = [], results = [])
+  def self.determine_hand_play(in_hand = [], so_far = [], untapped_lands = [], results = [])
     0.upto(in_hand.size - 1) do |idx|
       card = in_hand[idx]
 
@@ -140,7 +131,7 @@ class Deck
     results << so_far
   end
 
-  def cast(card, lands)
+  def self.cast(card, lands)
     if card.converted_cost <= lands.size
       colorless = card.colorless
       colored = card.colored.dup

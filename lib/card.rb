@@ -1,6 +1,14 @@
 class Card
   attr_reader :name, :castingcost, :abilities_costs
 
+  def initialize(name, castingcost, abilities_costs = nil)
+    @name = name
+    @castingcost = castingcost
+    @abilities_costs = abilities_costs
+  end
+
+
+
   def basic_land?
     false
   end
@@ -26,9 +34,8 @@ class Card
     @colorless
   end
 
-  def initialize(name, castingcost, abilities_costs = nil)
-    @name = name
-    @castingcost = castingcost
-    @abilities_costs = abilities_costs
+  
+  def ==(other)
+    @name == other.name
   end
 end
