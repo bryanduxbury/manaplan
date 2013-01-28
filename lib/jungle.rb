@@ -23,7 +23,7 @@ class Jungle
       until phenotype_mask.select{|x| x == true}.size == @deck_size
         phenotype_mask[rand(phenotype_mask.size)] = false
       end
-      @population << Phenotype.new(phenotype_mask, complete_pool)
+      @population << Phenotype.new(phenotype_mask, @card_pool)
     end
   end
 
@@ -36,17 +36,17 @@ class Jungle
   def generation(generation_number)
     puts "starting generation number #{generation_number}"
 
-    for phenotype in population
+    for phenotype in @population
       phenotype.evaluate(36, 10)
       print "#"
     end
     puts
 
-    print_population_stats(population)
+    print_population_stats()
 
     new_population = []
 
-    sorted_by_util = population.sort_by(&:min_spend)
+    sorted_by_util = @population.sort_by(&:min_spend)
     
     breed_top_half(sorted_by_util, new_population)
 
@@ -76,14 +76,14 @@ class Jungle
 
   def summarize
     puts "Evaluating final population."
-    for phenotype in population
+    for phenotype in @population
       phenotype.evaluate(36, 10)
       print '#'
     end
 
     puts "Final population performance:"
-    print_population_stats(population)
-    grouped_by_min_spend = population.group_by(&:min_spend)
+    print_population_stats()
+    grouped_by_min_spend = @population.group_by(&:min_spend)
 
     puts "Peak group achieves a minimum 20-turn mana spend of #{grouped_by_min_spend.keys.max}."
     puts "Decks: "
