@@ -3,7 +3,7 @@ class BasicLand < Card
 
   def initialize(color)
     super("land(#{color})", "0")
-    @color = color
+    @color = ManaSymbol.new(color)
   end
 
   def basic_land?

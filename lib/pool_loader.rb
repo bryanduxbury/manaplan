@@ -9,13 +9,13 @@ class PoolLoader
       tokens = line.split("\t")
 
       copies = tokens.shift.to_i
-      card = Card.new(tokens.shift, tokens.shift, tokens)
+      card = Card.new(tokens.shift, ManaSymbol.parse(tokens.shift), tokens)
       copies.times do
         card_pool << card
       end
     end
 
-    card_pool.map{|card| card.colored}.flatten.uniq.each do |color_used|
+    card_pool.map{|card| card.colored.map(&:colors)}.flatten.uniq.each do |color_used|
       20.times do
         card_pool << BasicLand.new(color_used)
       end

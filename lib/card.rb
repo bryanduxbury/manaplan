@@ -20,14 +20,14 @@ class Card
 
   def colored
     if @colored.nil?
-      @colored = castingcost.sub(/\d*/, "").split("")
+      @colored = castingcost[1..-1]
     end
     @colored
   end
 
   def colorless
     if @colorless.nil?
-      @colorless = castingcost.sub(/[a-z]*/, "").to_i
+      @colorless = castingcost.first
     end
     @colorless
   end
