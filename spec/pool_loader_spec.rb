@@ -13,4 +13,8 @@ describe PoolLoader do
     lands.should == [BasicLand.new("W")] * 20 + [BasicLand.new("B")] * 20
   end
 
+  it "should ignore lines preceeded by a pound symbol" do
+    pool = PoolLoader.load_strings(["##1\tTundra Wolves\t1W", "2\tVile Rebirth\tB"])
+    pool.reject(&:basic_land?).should == [Card.new("Vile Rebirth", "B")] * 2
+  end
 end
